@@ -1,35 +1,40 @@
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { Admin } from '../src/models/Admin';
-import { connectDB, disconnectDB } from '../src/config/db';
-import type { AdminRole } from '../src/types';
+import { connectDB } from '../src/config/db';
 
 dotenv.config();
-
-const adminData = {
-  name: 'Super Admin',
-  email: 'admin@delivery.com',
-  password: 'admin123',
-  role: 'super_admin' as AdminRole,
-};
 
 async function seed(): Promise<void> {
   await connectDB();
 
-  const exists = await Admin.findOne({ email: adminData.email });
+  const phone = process.env.ADMIN_PHONE || '+201000000000';
+  const email = process.env.ADMIN_EMAIL || 'admin@delivery.com';
+
+  const exists = await Admin.findOne({ $or: [{ phone }, { email }] });
   if (exists) {
-    console.log('Admin already exists:', adminData.email);
-    await disconnectDB();
-    process.exit(0);
+    console.log('Admin already exists:', exists.phone, exists.email);
+  } else {
+    await Admin.create({
+      name: 'Super Admin',
+      phone,
+      email,
+      countryCode: process.env.ADMIN_COUNTRY_CODE || 'EG',
+      password: process.env.ADMIN_PASSWORD || 'admin123',
+      role: 'super_admin',
+      phoneVerified: true,
+      emailVerified: true,
+    });
+    console.log('Admin created');
+    console.log('  phone:', phone, '| password:', process.env.ADMIN_PASSWORD || 'admin123');
+    console.log('  email:', email);
   }
 
-  await Admin.create(adminData);
-  console.log('Admin created:', adminData.email, '| password:', adminData.password);
-  await disconnectDB();
+  await mongoose.disconnect();
   process.exit(0);
 }
 
-seed().catch(async (err) => {
+seed().catch((err) => {
   console.error(err);
-  await disconnectDB().catch(() => undefined);
   process.exit(1);
 });

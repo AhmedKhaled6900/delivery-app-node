@@ -1,22 +1,13 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
-import type { Model, Types } from 'mongoose';
+import type { Types } from 'mongoose';
 import { ApiError } from '../utils/ApiError';
 import { env } from '../config/env';
-import type { Role, RegisterInput } from '../types';
+import type { Role, AuthResponse } from '../types';
 
-export interface AuthUser {
+interface TokenUser {
   _id: Types.ObjectId;
-  email: string;
-  comparePassword(candidate: string): Promise<boolean>;
   toObject(): Record<string, unknown>;
-}
-
-export type AuthModel = Model<AuthUser>;
-
-function stripPassword(doc: AuthUser): Record<string, unknown> {
-  const obj = doc.toObject();
-  delete obj.password;
-  return obj;
+  password?: string;
 }
 
 export function signToken(userId: Types.ObjectId, role: Role): string {
@@ -26,38 +17,30 @@ export function signToken(userId: Types.ObjectId, role: Role): string {
   return jwt.sign({ id: userId.toString(), role }, env.jwt.secret, options);
 }
 
-export async function registerUser(
-  Model: AuthModel,
-  data: RegisterInput,
-  role: Role
-): Promise<{ user: Record<string, unknown>; token: string }> {
-  const exists = await Model.findOne({ email: data.email });
-  if (exists) {
-    throw new ApiError(409, 'Email already registered');
-  }
-
-  const user = await Model.create(data);
-  const token = signToken(user._id, role);
-
-  return { user: stripPassword(user), token };
+export function toAuthResponse(
+  user: TokenUser,
+  role: Role,
+  requiresVerification?: AuthResponse['requiresVerification']
+): AuthResponse {
+  const obj = user.toObject();
+  delete obj.password;
+  return {
+    user: obj,
+    token: signToken(user._id, role),
+    ...(requiresVerification && Object.keys(requiresVerification).length > 0
+      ? { requiresVerification }
+      : {}),
+  };
 }
 
-export async function loginUser(
-  Model: AuthModel,
-  email: string,
-  password: string,
-  role: Role
-): Promise<{ user: Record<string, unknown>; token: string }> {
-  const user = await Model.findOne({ email }).select('+password');
-  if (!user) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const valid = await user.comparePassword(password);
-  if (!valid) {
-    throw new ApiError(401, 'Invalid email or password');
-  }
-
-  const token = signToken(user._id, role);
-  return { user: stripPassword(user), token };
+export function verificationFlags(user: {
+  phone?: string;
+  email?: string;
+  phoneVerified: boolean;
+  emailVerified: boolean;
+}): AuthResponse['requiresVerification'] {
+  const flags: AuthResponse['requiresVerification'] = {};
+  if (user.phone && !user.phoneVerified) flags.phone = true;
+  if (user.email && !user.emailVerified) flags.email = true;
+  return Object.keys(flags).length > 0 ? flags : undefined;
 }

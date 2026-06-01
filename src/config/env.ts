@@ -2,53 +2,50 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-/** Strips whitespace, newlines, and surrounding quotes (common Railway paste mistakes). */
-function cleanEnv(value: string | undefined): string | undefined {
-  if (value == null || value === '') return undefined;
-  return value
-    .trim()
-    .replace(/^["']+|["']+$/g, '')
-    .replace(/\r?\n/g, '')
-    .trim();
+function clean(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return value.trim().replace(/^["']+|["']+$/g, '').replace(/\r?\n/g, '');
 }
 
-const isProduction = cleanEnv(process.env.NODE_ENV) === 'production';
-const mongodbUri = cleanEnv(process.env.MONGODB_URI);
-
+const mongodbUri = clean(process.env.MONGODB_URI);
 if (!mongodbUri) {
-  throw new Error(
-    [
-      'MONGODB_URI is required.',
-      '',
-      'Local: add MONGODB_URI to your .env file.',
-      'Railway: Variables → MONGODB_URI (no quotes around the value).',
-      '',
-      'Then redeploy.',
-    ].join('\n')
-  );
+  throw new Error('MONGODB_URI is required in .env or Railway Variables');
 }
 
-if (isProduction && mongodbUri === 'memory') {
-  throw new Error('MONGODB_URI=memory is not allowed in production. Use MongoDB Atlas on Railway.');
-}
+const isProduction = clean(process.env.NODE_ENV) === 'production';
+const jwtSecret = clean(process.env.JWT_SECRET);
 
-const jwtSecret = cleanEnv(process.env.JWT_SECRET);
 if (isProduction && !jwtSecret) {
-  throw new Error(
-    'JWT_SECRET is required in production. Add it in Railway → Variables (no quotes, single line).'
-  );
+  throw new Error('JWT_SECRET is required when NODE_ENV=production');
 }
-
-const jwtExpiresIn = cleanEnv(process.env.JWT_EXPIRES_IN) || '7d';
 
 export const env = {
   port: Number(process.env.PORT) || 3000,
-  nodeEnv: cleanEnv(process.env.NODE_ENV) || 'development',
+  nodeEnv: clean(process.env.NODE_ENV) || 'development',
   mongodbUri,
-  mongodbDbName: cleanEnv(process.env.MONGODB_DB_NAME) || 'delivery-app',
-  useMemoryDb: mongodbUri === 'memory',
+  mongodbDbName: clean(process.env.MONGODB_DB_NAME) || 'delivery-app',
   jwt: {
-    secret: jwtSecret || 'dev-secret-change-in-production',
-    expiresIn: jwtExpiresIn,
+    secret: jwtSecret || 'dev-secret',
+    expiresIn: clean(process.env.JWT_EXPIRES_IN) || '7d',
+  },
+  otp: {
+    expiresMinutes: Number(process.env.OTP_EXPIRES_MINUTES) || 10,
+    maxAttempts: Number(process.env.OTP_MAX_ATTEMPTS) || 5,
+    resendCooldownSeconds: Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60,
+  },
+  google: {
+    clientId: clean(process.env.GOOGLE_CLIENT_ID),
+  },
+  smtp: {
+    host: clean(process.env.SMTP_HOST),
+    port: Number(process.env.SMTP_PORT) || 587,
+    user: clean(process.env.SMTP_USER),
+    pass: clean(process.env.SMTP_PASS),
+    from: clean(process.env.SMTP_FROM) || 'noreply@delivery.app',
+  },
+  twilio: {
+    accountSid: clean(process.env.TWILIO_ACCOUNT_SID),
+    authToken: clean(process.env.TWILIO_AUTH_TOKEN),
+    from: clean(process.env.TWILIO_PHONE_NUMBER),
   },
 } as const;

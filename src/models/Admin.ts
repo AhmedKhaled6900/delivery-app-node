@@ -4,9 +4,13 @@ import type { AdminRole } from '../types';
 
 export interface IAdmin {
   name: string;
-  email: string;
+  phone: string;
+  email?: string;
+  countryCode?: string;
   password: string;
   role: AdminRole;
+  phoneVerified: boolean;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,9 +26,13 @@ type AdminModel = Model<IAdmin, object, IAdminMethods>;
 const adminSchema = new Schema<IAdmin, AdminModel, IAdminMethods>(
   {
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    phone: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+    countryCode: { type: String, uppercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
     role: { type: String, enum: ['super_admin', 'admin'] as AdminRole[], default: 'admin' },
+    phoneVerified: { type: Boolean, default: false },
+    emailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

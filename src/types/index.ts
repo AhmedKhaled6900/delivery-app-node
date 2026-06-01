@@ -8,6 +8,16 @@ export type VehicleType = 'motorcycle' | 'car' | 'bicycle';
 
 export type AdminRole = 'super_admin' | 'admin';
 
+export type OtpChannel = 'phone' | 'email';
+
+export type OtpPurpose =
+  | 'verify_phone'
+  | 'verify_email'
+  | 'reset_password'
+  | 'admin_reset_password';
+
+export type ClientAuthProvider = 'phone' | 'email' | 'google';
+
 export interface ICoordinates {
   lat?: number;
   lng?: number;
@@ -28,19 +38,6 @@ export interface JwtPayload {
   role: Role;
 }
 
-export interface RegisterInput {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  vehicleType?: VehicleType;
-}
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
 export interface CreateOrderInput {
   pickupAddress: IAddress;
   dropoffAddress: IAddress;
@@ -54,4 +51,13 @@ export interface AssignOrderInput {
 
 export interface UpdateOrderStatusInput {
   status: DeliveryStatusUpdate;
+}
+
+export interface AuthResponse {
+  user: Record<string, unknown>;
+  token: string;
+  requiresVerification?: {
+    phone?: boolean;
+    email?: boolean;
+  };
 }
