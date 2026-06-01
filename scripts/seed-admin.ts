@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import { Admin } from '../src/models/Admin';
-import { env } from '../src/config/env';
+import { connectDB, disconnectDB } from '../src/config/db';
 import type { AdminRole } from '../src/types';
 
 dotenv.config();
@@ -14,20 +13,23 @@ const adminData = {
 };
 
 async function seed(): Promise<void> {
-  await mongoose.connect(env.mongodbUri);
+  await connectDB();
 
   const exists = await Admin.findOne({ email: adminData.email });
   if (exists) {
     console.log('Admin already exists:', adminData.email);
+    await disconnectDB();
     process.exit(0);
   }
 
   await Admin.create(adminData);
   console.log('Admin created:', adminData.email, '| password:', adminData.password);
+  await disconnectDB();
   process.exit(0);
 }
 
-seed().catch((err) => {
+seed().catch(async (err) => {
   console.error(err);
+  await disconnectDB().catch(() => undefined);
   process.exit(1);
 });
