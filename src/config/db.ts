@@ -50,7 +50,10 @@ export async function connectDB(): Promise<void> {
   }
 
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 15_000,
+      connectTimeoutMS: 15_000,
+    });
     console.log('MongoDB connected');
   } catch (err) {
     if (isConnectionRefused(err)) {

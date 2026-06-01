@@ -7,6 +7,14 @@ import { errorHandler, notFound } from './middleware/errorHandler';
 
 const app = express();
 
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Delivery API',
+    health: '/api/health',
+  });
+});
+
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));

@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/server.js",
+    "railway:build": "npm install && npm run build",
     "dev": "tsx watch src/server.ts",
     "seed:admin": "tsx scripts/seed-admin.ts"
   },
@@ -20,7 +21,8 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.0",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "typescript": "^5.6.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -30,7 +32,6 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.9.0",
     "mongodb-memory-server": "^10.1.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "tsx": "^4.19.2"
   }
 }
