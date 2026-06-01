@@ -2,8 +2,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const isProduction = process.env.NODE_ENV === 'production';
-const mongodbUri = process.env.MONGODB_URI?.trim();
+/** Strips whitespace, newlines, and surrounding quotes (common Railway paste mistakes). */
+function cleanEnv(value: string | undefined): string | undefined {
+  if (value == null || value === '') return undefined;
+  return value
+    .trim()
+    .replace(/^["']+|["']+$/g, '')
+    .replace(/\r?\n/g, '')
+    .trim();
+}
+
+const isProduction = cleanEnv(process.env.NODE_ENV) === 'production';
+const mongodbUri = cleanEnv(process.env.MONGODB_URI);
 
 if (!mongodbUri) {
   throw new Error(
@@ -11,11 +21,9 @@ if (!mongodbUri) {
       'MONGODB_URI is required.',
       '',
       'Local: add MONGODB_URI to your .env file.',
-      'Railway: open your project → Variables → New Variable',
-      '  Name:  MONGODB_URI',
-      '  Value: mongodb+srv://USER:PASS@cluster.mongodb.net/delivery-app?retryWrites=true&w=majority',
+      'Railway: Variables → MONGODB_URI (no quotes around the value).',
       '',
-      'Then redeploy. (.env is not uploaded to Railway.)',
+      'Then redeploy.',
     ].join('\n')
   );
 }
@@ -24,21 +32,23 @@ if (isProduction && mongodbUri === 'memory') {
   throw new Error('MONGODB_URI=memory is not allowed in production. Use MongoDB Atlas on Railway.');
 }
 
-const jwtSecret = process.env.JWT_SECRET?.trim();
+const jwtSecret = cleanEnv(process.env.JWT_SECRET);
 if (isProduction && !jwtSecret) {
   throw new Error(
-    'JWT_SECRET is required in production. Add it in Railway → Variables (same place as MONGODB_URI).'
+    'JWT_SECRET is required in production. Add it in Railway → Variables (no quotes, single line).'
   );
 }
 
+const jwtExpiresIn = cleanEnv(process.env.JWT_EXPIRES_IN) || '7d';
+
 export const env = {
   port: Number(process.env.PORT) || 3000,
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv: cleanEnv(process.env.NODE_ENV) || 'development',
   mongodbUri,
-  mongodbDbName: process.env.MONGODB_DB_NAME || 'delivery-app',
+  mongodbDbName: cleanEnv(process.env.MONGODB_DB_NAME) || 'delivery-app',
   useMemoryDb: mongodbUri === 'memory',
   jwt: {
     secret: jwtSecret || 'dev-secret-change-in-production',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    expiresIn: jwtExpiresIn,
   },
 } as const;
