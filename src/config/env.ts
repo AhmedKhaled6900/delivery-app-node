@@ -48,4 +48,8 @@ export const env = {
     authToken: clean(process.env.TWILIO_AUTH_TOKEN),
     from: clean(process.env.TWILIO_PHONE_NUMBER),
   },
+  corsOrigins: (clean(process.env.CORS_ORIGINS) || 'http://localhost:5173,http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 } as const;
