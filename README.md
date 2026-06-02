@@ -35,7 +35,6 @@ npm run dev
 - Orders لكل دور
 - أكواد الأخطاء وأمثلة Postman
 
-## Railway
 
 | Variable | مطلوب |
 |----------|--------|
