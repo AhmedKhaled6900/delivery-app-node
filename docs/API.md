@@ -247,6 +247,21 @@ ok
 #### `GET /api/admin/roles`
 🔒 `roles.view` أو `roles.manage`
 
+**Query:** `page` · `limit`
+
+**Response `200`:**
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "_id": "...", "name": "Viewer", "permissions": ["clients.view"], "isSystem": true }
+    ],
+    "pagination": { "page": 1, "limit": 50, "total": 4, "pages": 1 }
+  }
+}
+```
+
 #### `POST /api/admin/roles`
 🔒 `roles.manage`
 

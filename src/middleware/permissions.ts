@@ -1,9 +1,10 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import type { Permission } from '../config/permissions';
+import { ALL_PERMISSIONS } from '../config/permissions';
 import { ApiError } from '../utils/ApiError';
-import { hasAnyPermission, resolvePermissions } from '../services/permission.service';
+import { asyncHandler } from '../utils/asyncHandler';
+import { hasAnyPermission, hasFullAccess, resolvePermissions } from '../services/permission.service';
 import type { IAdminDocument } from '../models/Admin';
-import type { IDashboardRoleDocument } from '../models/DashboardRole';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -11,16 +12,26 @@ declare module 'express-serve-static-core' {
   }
 }
 
-export function loadAdminPermissions(): RequestHandler {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    const admin = req.user as IAdminDocument | undefined;
-    if (!admin) return next(new ApiError(401, 'Authentication required'));
+export const loadAdminPermissions = asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
+  const admin = req.user as IAdminDocument | undefined;
+  if (!admin) {
+    next(new ApiError(401, 'Authentication required'));
+    return;
+  }
 
-    const populated = admin.assignedRoles as unknown as IDashboardRoleDocument[];
-    req.adminPermissions = resolvePermissions(admin, populated);
+  if (hasFullAccess(admin)) {
+    req.adminPermissions = [...ALL_PERMISSIONS];
     next();
-  };
-}
+    return;
+  }
+
+  if (admin.assignedRoles?.length) {
+    await admin.populate('assignedRoles');
+  }
+
+  req.adminPermissions = resolvePermissions(admin);
+  next();
+});
 
 export function requirePermission(...permissions: Permission[]): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
@@ -37,7 +48,7 @@ export function requirePermission(...permissions: Permission[]): RequestHandler 
 export function requireSuperAdmin(): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
     const admin = req.user as IAdminDocument;
-    if (admin.role !== 'super_admin') {
+    if (!hasFullAccess(admin)) {
       return next(new ApiError(403, 'Super admin access required'));
     }
     next();

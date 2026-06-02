@@ -26,9 +26,7 @@ async function findUserByRole(
     case 'delivery':
       return Delivery.findById(id).select('-password') as Promise<IDeliveryDocument | null>;
     case 'admin':
-      return Admin.findById(id)
-        .select('-password')
-        .populate('assignedRoles') as Promise<IAdminDocument | null>;
+      return Admin.findById(id).select('-password') as Promise<IAdminDocument | null>;
   }
 }
 

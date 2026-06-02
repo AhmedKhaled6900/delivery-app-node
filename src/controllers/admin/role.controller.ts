@@ -5,9 +5,23 @@ import { DashboardRole } from '../../models/DashboardRole';
 import { Admin } from '../../models/Admin';
 import type { Permission } from '../../config/permissions';
 
-export const listRoles = asyncHandler(async (_req: Request, res: Response) => {
-  const roles = await DashboardRole.find().sort({ name: 1 }).lean();
-  res.json({ success: true, data: roles });
+export const listRoles = asyncHandler(async (req: Request, res: Response) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    DashboardRole.find().sort({ name: 1 }).skip(skip).limit(limit).lean(),
+    DashboardRole.countDocuments(),
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      items,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) || 1 },
+    },
+  });
 });
 
 export const getRole = asyncHandler(async (req: Request, res: Response) => {

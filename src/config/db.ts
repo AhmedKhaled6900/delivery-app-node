@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { env } from './env';
 
+mongoose.set('bufferCommands', false);
+
 function resolveMongoUri(uri: string): string {
   if (/mongodb(\+srv)?:\/\/[^/]+\/[^/?]+/.test(uri)) return uri;
   const [base, query = ''] = uri.split('?');
