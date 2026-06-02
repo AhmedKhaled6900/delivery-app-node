@@ -10,14 +10,20 @@ async function start(): Promise<void> {
     app.set('trust proxy', 1);
   }
 
+  console.log(`CORS origins: ${env.corsOrigins.join(', ')}`);
+
   http.createServer(app).listen(port, '0.0.0.0', () => {
-    console.log(`Listening on port ${port}`);
+    console.log(`Listening on 0.0.0.0:${port}`);
+    console.log(`Health: /health`);
   });
 
-  await connectDB();
+  connectDB().catch((err: Error) => {
+    console.error('MongoDB unavailable — fix Atlas Network Access (0.0.0.0/0) and redeploy.');
+    console.error(err.message);
+  });
 }
 
 start().catch((err: Error) => {
-  console.error(err.message);
+  console.error('Failed to start:', err.message);
   process.exit(1);
 });

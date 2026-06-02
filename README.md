@@ -35,13 +35,13 @@ npm run dev
 - Orders لكل دور
 - أكواد الأخطاء وأمثلة Postman
 
+## Railway
 
 | Variable | مطلوب |
 |----------|--------|
 | `MONGODB_URI` | ✅ |
 | `JWT_SECRET` | ✅ |
 | `NODE_ENV` | `production` |
-| `CORS_ORIGINS` | `http://localhost:5173,https://your-frontend.com` |
 
 Networking → **Target Port** = نفس `PORT` في اللوج (مثلاً `8080`).
 

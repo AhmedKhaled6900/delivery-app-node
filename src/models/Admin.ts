@@ -1,4 +1,4 @@
-import mongoose, { Schema, type HydratedDocument, type Model } from 'mongoose';
+import mongoose, { Schema, type HydratedDocument, type Model, type Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import type { AdminRole } from '../types';
 
@@ -9,8 +9,11 @@ export interface IAdmin {
   countryCode?: string;
   password: string;
   role: AdminRole;
+  assignedRoles: Types.ObjectId[];
+  isActive: boolean;
   phoneVerified: boolean;
   emailVerified: boolean;
+  createdBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,9 +33,16 @@ const adminSchema = new Schema<IAdmin, AdminModel, IAdminMethods>(
     email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     countryCode: { type: String, uppercase: true, trim: true },
     password: { type: String, required: true, minlength: 6, select: false },
-    role: { type: String, enum: ['super_admin', 'admin'] as AdminRole[], default: 'admin' },
+    role: {
+      type: String,
+      enum: ['super_admin', 'staff', 'admin'] as AdminRole[],
+      default: 'staff',
+    },
+    assignedRoles: [{ type: Schema.Types.ObjectId, ref: 'DashboardRole' }],
+    isActive: { type: Boolean, default: true },
     phoneVerified: { type: Boolean, default: false },
     emailVerified: { type: Boolean, default: false },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Admin' },
   },
   { timestamps: true }
 );

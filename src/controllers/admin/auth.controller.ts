@@ -2,10 +2,19 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { ApiError } from '../../utils/ApiError';
 import { Admin } from '../../models/Admin';
+import type { IAdminDocument } from '../../models/Admin';
 import { toAuthResponse } from '../../services/auth.service';
+import { toAdminProfile } from '../../services/permission.service';
 import { createAndSendOtp, verifyOtp } from '../../services/otp.service';
 import { normalizeEmail, normalizePhone } from '../../utils/phone';
 import type { OtpChannel } from '../../types';
+
+async function buildAdminAuthResponse(admin: IAdminDocument) {
+  await admin.populate('assignedRoles');
+  const auth = toAuthResponse(admin, 'admin');
+  auth.user = toAdminProfile(admin);
+  return auth;
+}
 
 export const loginPhone = asyncHandler(async (req: Request, res: Response) => {
   const phone = normalizePhone(req.body.phone, req.body.countryCode);
@@ -14,8 +23,9 @@ export const loginPhone = asyncHandler(async (req: Request, res: Response) => {
 
   const valid = await admin.comparePassword(req.body.password);
   if (!valid) throw new ApiError(401, 'Invalid phone or password');
+  if (!admin.isActive) throw new ApiError(403, 'Account is deactivated');
 
-  res.json({ success: true, data: toAuthResponse(admin, 'admin') });
+  res.json({ success: true, data: await buildAdminAuthResponse(admin) });
 });
 
 export const loginEmail = asyncHandler(async (req: Request, res: Response) => {
@@ -25,8 +35,9 @@ export const loginEmail = asyncHandler(async (req: Request, res: Response) => {
 
   const valid = await admin.comparePassword(req.body.password);
   if (!valid) throw new ApiError(401, 'Invalid email or password');
+  if (!admin.isActive) throw new ApiError(403, 'Account is deactivated');
 
-  res.json({ success: true, data: toAuthResponse(admin, 'admin') });
+  res.json({ success: true, data: await buildAdminAuthResponse(admin) });
 });
 
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
@@ -100,10 +111,11 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   res.json({
     success: true,
     message: 'Password updated successfully',
-    data: toAuthResponse(admin, 'admin'),
+    data: await buildAdminAuthResponse(admin),
   });
 });
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
-  res.json({ success: true, data: { user: req.user } });
+  const admin = req.user as IAdminDocument;
+  res.json({ success: true, data: { user: toAdminProfile(admin) } });
 });

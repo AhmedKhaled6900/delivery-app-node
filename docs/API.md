@@ -83,6 +83,8 @@ ok
       "phone": "+201012345678",
       "email": "admin@delivery.com",
       "role": "super_admin",
+      "permissions": ["dashboard.view_stats", "clients.view", "..."],
+      "roles": [],
       "phoneVerified": true,
       "emailVerified": true
     },
@@ -198,15 +200,104 @@ ok
 {
   "success": true,
   "data": {
-    "user": { "_id", "name", "phone", "email", "role", ... }
+    "user": { "_id", "name", "phone", "email", "role", "permissions", "roles", ... }
   }
+}
+```
+
+`super_admin` يحصل على كل الصلاحيات تلقائياً. الموظف (`staff`) يحصل على `permissions` مجمّعة من الأدوار المعيّنة له.
+
+---
+
+### Roles & Permissions — `/api/admin/roles` · `/api/admin/staff` · `/api/admin/permissions`
+
+🔒 **Auth:** Admin token + صلاحية مناسبة (أو `super_admin`)
+
+#### الصلاحيات المتاحة
+
+| Permission | الوصف |
+|------------|--------|
+| `dashboard.view_stats` | عرض إحصائيات الداشبورد |
+| `clients.view` | عرض العملاء |
+| `deliveries.view` | عرض المندوبين |
+| `deliveries.manage` | تفعيل/إيقاف المندوبين |
+| `orders.view` | عرض الطلبات |
+| `orders.assign` | تعيين الطلبات |
+| `orders.cancel` | إلغاء الطلبات |
+| `roles.view` | عرض الأدوار |
+| `roles.manage` | إنشاء/تعديل/حذف الأدوار |
+| `staff.view` | عرض الموظفين |
+| `staff.manage` | إضافة/تعديل/إيقاف الموظفين |
+
+#### `GET /api/admin/permissions`
+🔒 `roles.view` أو `roles.manage`
+
+**Response `200`:**
+```json
+{
+  "success": true,
+  "data": [
+    { "key": "orders.view", "label": "View orders", "labelAr": "عرض الطلبات", "group": "orders" }
+  ]
 }
 ```
 
 ---
 
+#### `GET /api/admin/roles`
+🔒 `roles.view` أو `roles.manage`
+
+#### `POST /api/admin/roles`
+🔒 `roles.manage`
+
+**Body:**
+```json
+{
+  "name": "Support Agent",
+  "description": "View orders and clients only",
+  "permissions": ["dashboard.view_stats", "clients.view", "orders.view"]
+}
+```
+
+#### `PATCH /api/admin/roles/:id` · `DELETE /api/admin/roles/:id`
+🔒 `roles.manage` — الأدوار النظامية (`isSystem: true`) لا يمكن حذفها.
+
+---
+
+#### `GET /api/admin/staff`
+🔒 `staff.view` أو `staff.manage`
+
+**Query:** `page` · `limit`
+
+#### `POST /api/admin/staff`
+🔒 `staff.manage`
+
+**Body:**
+```json
+{
+  "name": "Ahmed",
+  "phone": "01012345678",
+  "countryCode": "EG",
+  "email": "staff@delivery.com",
+  "password": "staff123",
+  "roleIds": ["<dashboardRoleId1>", "<dashboardRoleId2>"]
+}
+```
+
+#### `PATCH /api/admin/staff/:id`
+🔒 `staff.manage` — تحديث الاسم، الأدوار، `isActive`، أو كلمة المرور.
+
+#### `DELETE /api/admin/staff/:id`
+🔒 `staff.manage` — إيقاف الموظف (`isActive: false`).
+
+**Errors:** `403` لا تملك الصلاحية · `409` دور مستخدم لموظفين
+
+**Seed:** `npm run seed:admin` ينشئ أدوار افتراضية: Viewer، Orders Manager، Operations Manager، HR Manager.
+
+---
+
 ### Dashboard — `/api/admin/dashboard`
-🔒 كل المسارات تحتاج **Admin token**
+🔒 **Admin token** + الصلاحية المطلوبة لكل مسار
 
 #### `GET /api/admin/dashboard/stats`
 

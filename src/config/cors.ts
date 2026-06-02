@@ -3,7 +3,6 @@ import { env } from './env';
 
 export const corsMiddleware = cors({
   origin(origin, callback) {
-    // Postman, mobile apps, server-to-server
     if (!origin) {
       callback(null, true);
       return;
@@ -14,9 +13,11 @@ export const corsMiddleware = cors({
       return;
     }
 
-    callback(new Error(`CORS blocked origin: ${origin}`));
+    console.warn(`CORS blocked origin: ${origin} | allowed: ${env.corsOrigins.join(', ')}`);
+    callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
 });

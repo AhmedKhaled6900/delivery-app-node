@@ -6,7 +6,7 @@ export type DeliveryStatusUpdate = 'picked_up' | 'delivered';
 
 export type VehicleType = 'motorcycle' | 'car' | 'bicycle';
 
-export type AdminRole = 'super_admin' | 'admin';
+export type AdminRole = 'super_admin' | 'staff' | 'admin';
 
 export type OtpChannel = 'phone' | 'email';
 

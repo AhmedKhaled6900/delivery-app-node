@@ -26,7 +26,9 @@ async function findUserByRole(
     case 'delivery':
       return Delivery.findById(id).select('-password') as Promise<IDeliveryDocument | null>;
     case 'admin':
-      return Admin.findById(id).select('-password') as Promise<IAdminDocument | null>;
+      return Admin.findById(id)
+        .select('-password')
+        .populate('assignedRoles') as Promise<IAdminDocument | null>;
   }
 }
 
@@ -53,6 +55,10 @@ export function authenticate<R extends Role>(role: R): RequestHandler {
 
       if (role === 'delivery' && !(user as IDeliveryDocument).isActive) {
         return next(new ApiError(403, 'Delivery account is deactivated'));
+      }
+
+      if (role === 'admin' && !(user as IAdminDocument).isActive) {
+        return next(new ApiError(403, 'Admin account is deactivated'));
       }
 
       req.user = user as RoleDocumentMap[R];
